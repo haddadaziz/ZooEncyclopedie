@@ -1,4 +1,3 @@
-
 tailwind.config = {
     theme: {
         extend: {
@@ -21,38 +20,61 @@ const back_from_educateur_button = document.getElementById("back_from_educateur"
 const success_notification = document.getElementById("success_notification")
 const error_notification = document.getElementById("error_notification")
 
-if (localStorage.getItem('vueActuelle') === 'educateur') {
-    educateur_view.classList.remove("hidden")
-    homepage_view.classList.add("hidden")
-    statistiques_view.classList.add("hidden")
-}
-
 document.addEventListener("DOMContentLoaded", () => {
+    const vueSauvegardee = localStorage.getItem('vueActuelle');
+    if (vueSauvegardee === 'educateur') {
+        educateur_view.classList.remove("hidden");
+        homepage_view.classList.add("hidden");
+        statistiques_view.classList.add("hidden");
+    } else {
+        homepage_view.classList.remove("hidden");
+        educateur_view.classList.add("hidden");
+        statistiques_view.classList.add("hidden");
+    }
     const urlParams = new URLSearchParams(window.location.search);
-
     if (urlParams.get('status') === 'success_delete') {
         display_green_notification("Animal supprimé avec succès !");
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-    
+    else if (urlParams.get('status') === 'success_ajouter_animal') {
+        display_green_notification("Animal ajouté avec succès !");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    else if (urlParams.get('status') === 'success_habitat') {
+        display_green_notification("Nouvel habitat créé avec succès !");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    else if (urlParams.get('status') === 'error_habitat_exists') {
+        display_red_notification("Cet habitat existe déjà !");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    else if (urlParams.get('status') === 'success_edit_animal') {
+        display_green_notification("Informations de l'animal modifiés avec succès !");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    else if (urlParams.get('status') === 'success_edit_habitat') {
+        display_green_notification("Informations de l'habitat modifié avec succès !");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 })
 
 // Fonction qui affiche une notification en vert
 function display_green_notification(msg) {
-    error_notification.style.display = "none";
+    error_notification.classList.add("hidden")
     success_notification.textContent = msg
     success_notification.classList.remove("hidden");
     setTimeout(() => {
-        success_notification.style.display = "none";
+        success_notification.classList.add("hidden")
     }, 3000)
 }
 
 // Fonction qui affiche une notification en rouge
 function display_red_notification(msg) {
-    success_notification.style.display = "none"
+    success_notification.classList.add("hidden")
     error_notification.textContent = msg
-    error_notification.classList.remove("hidden"); setTimeout(() => {
-        error_notification.style.display = "none"
+    error_notification.classList.remove("hidden");
+    setTimeout(() => {
+        error_notification.classList.add("hidden")
     }, 3000)
 }
 

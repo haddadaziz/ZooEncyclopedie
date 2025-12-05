@@ -9,18 +9,26 @@ if (isset($_GET['habitat'])) {
 if (isset($_GET['nourriture'])) {
     $nourriture_choisie = $_GET['nourriture'];
 }
+$sql_base = "SELECT animal.*, habitat.description_habitat 
+             FROM animal 
+             INNER JOIN habitat ON animal.habitat_animal = habitat.id_habitat";
+
+// Ensuite on ajoute les filtres si besoin
 if ($habitat_choisi != "" && $nourriture_choisie != "") {
-    $sql = "SELECT * FROM animal WHERE habitat_animal = '$habitat_choisi' AND regime_animal = '$nourriture_choisie'";
+    $sql = $sql_base . " WHERE animal.habitat_animal = '$habitat_choisi' AND animal.regime_animal = '$nourriture_choisie'";
 } elseif ($habitat_choisi != "") {
-    $sql = "SELECT * FROM animal WHERE habitat_animal = '$habitat_choisi'";
+    $sql = $sql_base . " WHERE animal.habitat_animal = '$habitat_choisi'";
 } elseif ($nourriture_choisie != "") {
-    $sql = "SELECT * FROM animal WHERE regime_animal = '$nourriture_choisie'";
+    $sql = $sql_base . " WHERE animal.regime_animal = '$nourriture_choisie'";
 } else {
-    $sql = "SELECT * FROM animal";
+    $sql = $sql_base;
 }
+
 $resultat = $conn->query($sql);
 
-$sql_habitat = "SELECT * FROM habitat";
+$sql_habitat = "SELECT DISTINCT habitat.id_habitat, habitat.nom_habitat 
+                FROM habitat 
+                INNER JOIN animal ON habitat.id_habitat = animal.habitat_animal";
 $resultat_habitat = $conn->query($sql_habitat);
 
 $sql_carnivore = "SELECT * FROM animal WHERE regime_animal='Carnivore'";
@@ -111,19 +119,23 @@ $resultat_educ = $conn->query($sql_educ);
                         <label class="block text-left text-blue-800 font-bold mb-1 ml-2">Habitat</label>
                         <select name="habitat"
                             class="w-full bg-white border-2 border-blue-200 text-gray-700 py-3 px-4 pr-8 rounded-xl focus:outline-none focus:border-blue-500 font-bold cursor-pointer hover:border-blue-300 transition">
+
                             <option value="">🌍 Tous les habitats</option>
-                            <option value="1" <?php if ($habitat_choisi == "1") {
-                                echo "selected";
-                            } ?>>Savane</option>
-                            <option value="2" <?php if ($habitat_choisi == "2") {
-                                echo "selected";
-                            } ?>>Jungle</option>
-                            <option value="3" <?php if ($habitat_choisi == "3") {
-                                echo "selected";
-                            } ?>>Océan</option>
-                            <option value="4" <?php if ($habitat_choisi == "4") {
-                                echo "selected";
-                            } ?>>Désert</option>
+
+                            <?php
+                            if ($resultat_habitat && $resultat_habitat->num_rows > 0) {
+                                $resultat_habitat->data_seek(0);
+                                while ($ligne = $resultat_habitat->fetch_assoc()) {
+                                    $id = $ligne['id_habitat'];
+                                    $nom = $ligne['nom_habitat'];
+                                    $selection = "";
+                                    if ($habitat_choisi == $id) {
+                                        $selection = "selected";
+                                    }
+                                    echo "<option value='$id' $selection>$nom</option>";
+                                }
+                            }
+                            ?>
                         </select>
                     </div>
 
@@ -149,7 +161,7 @@ $resultat_educ = $conn->query($sql_educ);
                     </div>
 
                     <div class="w-full md:w-auto mt-6 md:mt-0 pt-1">
-                        <button type="submit" onclick="localStorage.setItem('vueActuelle', 'educateur')"
+                        <button type="submit" onclick="localStorage.setItem('vueActuelle', 'homepage')"
                             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2 mt-6">
                             <span>🔍</span> Rechercher
                         </button>
@@ -179,6 +191,7 @@ $resultat_educ = $conn->query($sql_educ);
                                 <p class="text-gray-600">
                                     <?php echo $row['regime_animal']; ?>
                                 </p>
+                                <span class="text-blue-600">Vit dans : <?php echo $row['description_habitat'] ?></span>
                             </div>
 
                         </div>
@@ -292,9 +305,9 @@ $resultat_educ = $conn->query($sql_educ);
                     <h2 class="text-2xl font-bold text-purple-800">Gestion des Animaux</h2>
                     <p class="text-gray-500">Ajouter un animal.</p>
                 </div>
-                <a href="ajouter.php"
+                <a href="ajouter_animal.php"
                     class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 flex items-center gap-2">
-                    <span>➕</span> Nouvel Animal
+                    <span>➕</span> Ajouter un Animal
                 </a>
             </div>
             <div
@@ -304,8 +317,8 @@ $resultat_educ = $conn->query($sql_educ);
                     <p class="text-gray-500">Ajouter/Modifier un habitat.</p>
                 </div>
                 <a href="modifier_habitat.php"
-                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 flex items-center gap-2 ml-96">
-                    <span>➕</span> Modifier Habitat
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 flex items-center gap-2 ml-96">
+                    <span></span> Modifier Habitat
                 </a>
                 <a href="ajouter_habitat.php"
                     class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 flex items-center gap-2">
@@ -324,19 +337,23 @@ $resultat_educ = $conn->query($sql_educ);
                             <label class="block text-left text-blue-800 font-bold mb-1 ml-2">Habitat</label>
                             <select name="habitat"
                                 class="w-full bg-white border-2 border-blue-200 text-gray-700 py-3 px-4 pr-8 rounded-xl focus:outline-none focus:border-blue-500 font-bold cursor-pointer hover:border-blue-300 transition">
+
                                 <option value="">🌍 Tous les habitats</option>
-                                <option value="1" <?php if ($habitat_choisi == "1") {
-                                    echo "selected";
-                                } ?>>Savane</option>
-                                <option value="2" <?php if ($habitat_choisi == "2") {
-                                    echo "selected";
-                                } ?>>Jungle</option>
-                                <option value="3" <?php if ($habitat_choisi == "3") {
-                                    echo "selected";
-                                } ?>>Océan</option>
-                                <option value="4" <?php if ($habitat_choisi == "4") {
-                                    echo "selected";
-                                } ?>>Désert</option>
+
+                                <?php
+                                if ($resultat_habitat && $resultat_habitat->num_rows > 0) {
+                                    $resultat_habitat->data_seek(0);
+                                    while ($ligne = $resultat_habitat->fetch_assoc()) {
+                                        $id = $ligne['id_habitat'];
+                                        $nom = $ligne['nom_habitat'];
+                                        $selection = "";
+                                        if ($habitat_choisi == $id) {
+                                            $selection = "selected";
+                                        }
+                                        echo "<option value='$id' $selection>$nom</option>";
+                                    }
+                                }
+                                ?>
                             </select>
                         </div>
 
@@ -362,7 +379,7 @@ $resultat_educ = $conn->query($sql_educ);
                         </div>
 
                         <div class="w-full md:w-auto mt-6 md:mt-0 pt-1">
-                            <button type="submit"
+                            <button type="submit" onclick="localStorage.setItem('vueActuelle', 'educateur')"
                                 class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2 mt-6">
                                 <span>🔍</span> Rechercher
                             </button>
@@ -374,7 +391,6 @@ $resultat_educ = $conn->query($sql_educ);
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
                 <?php
-                // ON UTILISE LA NOUVELLE VARIABLE $resultat_educ
                 if ($resultat_educ && $resultat_educ->num_rows > 0) {
                     while ($row = $resultat_educ->fetch_assoc()) {
                         ?>
@@ -393,9 +409,9 @@ $resultat_educ = $conn->query($sql_educ);
                             <div class="p-4">
                                 <h2 class="text-xl font-bold text-gray-800 mb-1"><?php echo $row['nom_animal']; ?></h2>
                                 <p class="text-gray-500 text-sm mb-4 italic"><?php echo $row['regime_animal']; ?></p>
-
+                                <span class="text-blue-600">Vit dans : <?php echo $row['description_habitat'] ?></span>
                                 <div class="flex gap-3 pt-4 border-t border-gray-100">
-                                    <a href="modifier.php?id=<?php echo $row['id_animal']; ?>"
+                                    <a href="modifier_animal.php?id=<?php echo $row['id_animal']; ?>"
                                         class="flex-1 bg-yellow-100 text-yellow-700 py-2 rounded-lg font-bold text-center hover:bg-yellow-200 transition text-sm flex items-center justify-center gap-1">✏️
                                         Modifier</a>
                                     <a href="supprimer.php?id=<?php echo $row['id_animal']; ?>"
@@ -416,9 +432,9 @@ $resultat_educ = $conn->query($sql_educ);
         </main>
     </section>
     <!-- Notifications d'erreur ou de succes -->
-    <div class="notification success hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-10 py-4 rounded-full shadow-2xl border-4 border-white/30 text-lg font-bold text-center min-w-[350px] shadow-green-500/50"
+    <div class="notification success hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-[999] bg-green-500 text-white px-10 py-4 rounded-full shadow-2xl border-4 border-white/30 text-lg font-bold text-center min-w-[350px] shadow-green-500/50"
         id="success_notification"></div>
-    <div class="notification error hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-10 py-4 rounded-full shadow-2xl border-4 border-white/30 text-lg font-bold text-center min-w-[350px] shadow-green-500/50"
+    <div class="notification error hidden fixed top-6 left-1/2 transform -translate-x-1/2 z-[999] bg-red-500 text-white px-10 py-4 rounded-full shadow-2xl border-4 border-white/30 text-lg font-bold text-center min-w-[350px] shadow-green-500/50"
         id="error_notification"></div>
 </body>
 
